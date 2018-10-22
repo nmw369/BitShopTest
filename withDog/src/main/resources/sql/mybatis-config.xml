@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE configuration
+ 		 PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+ 		"http://mybatis.org/dtd/mybatis-3-config.dtd">
+  						
+<!--	mybatis-config.xml :: MyBatis Framework  MetaData -->
+<configuration>
+
+	<!-- 기타 설정정보 :: [MyBatis_Home]/mybatis-3.2.1.pdf 참조 -->
+	<settings>
+		<setting name="callSettersOnNulls" value="false"/>
+	</settings>	
+	
+	<!-- FQCN(Full Qualified Class Name) Alias(별칭관리) -->
+	<typeAliases>
+		<typeAlias alias="user" type="com.withdog.service.domain.User" />
+		<typeAlias alias="dogBreedDic" type="com.withdog.service.domain.DogBreedDic" />
+		<typeAlias alias="fund" type="com.withdog.service.domain.Fund" />
+		<typeAlias alias="point" type="com.withdog.service.domain.Point" />
+		<typeAlias alias="ash" type="com.withdog.service.domain.Ash" />
+		<typeAlias alias="dogInfo" type="com.withdog.service.domain.DogInfo" />
+		<typeAlias alias="product" type="com.withdog.service.domain.Product" />
+		<typeAlias alias="purchase" type="com.withdog.service.domain.Purchase" />
+		<typeAlias alias="recommendInfo" type="com.withdog.service.domain.RecommendInfo" />
+		<typeAlias alias="healingDog" type="com.withdog.service.domain.HealingDog" />
+		<typeAlias alias="afterAsh" type="com.withdog.service.domain.AfterAsh" />
+		<typeAlias alias="consulting" type="com.withdog.service.domain.Consulting" />
+		<typeAlias alias="search" type="com.withdog.common.Search" />
+		<typeAlias alias="inquiry" type="com.withdog.service.domain.Inquiry" />
+		<typeAlias alias="review" type="com.withdog.service.domain.Review" />
+		<typeAlias alias="chatBot" type="com.withdog.service.domain.ChatBot" />
+		<typeAlias alias="cart" type="com.withdog.service.domain.Cart" />
+		<typeAlias alias="pushToken" type="com.withdog.service.domain.PushToken" />
+	</typeAliases>
+	
+	 <!-- SQL Definition :: file include -->
+	<mappers>
+		<mapper resource="sql/CommonMapper.xml"/>
+		<mapper resource="sql/UserMapper.xml"/>
+		<mapper resource="sql/DogBreedDicMapper.xml"/>
+		<mapper resource="sql/FundMapper.xml"/>
+		<mapper resource="sql/DogInfoMapper.xml"/>
+		<mapper resource="sql/ProductMapper.xml"/>
+		<mapper resource="sql/ASHMapper.xml"/>
+		<mapper resource="sql/AfterASHMapper.xml"/>
+		<mapper resource="sql/InquiryMapper.xml"/>
+		<mapper resource="sql/PurchaseMapper.xml"/>
+		<mapper resource="sql/QuickMapper.xml"/>
+		<mapper resource="sql/CartMapper.xml"/>
+		<mapper resource="sql/ReviewMapper.xml"/>
+	</mappers>
+
+</configuration>

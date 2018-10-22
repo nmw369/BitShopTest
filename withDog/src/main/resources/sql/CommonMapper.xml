@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CommonMapper">
+ 	
+ 	
+	<resultMap id="pointSelectMap" type="point">
+		<result property="pointNo"  								column="POINT_NO" 										jdbcType="INTEGER"/>
+	 	<result property="pointDate" 							column="REG_DATE"	 									jdbcType="DATE" />
+		<result property="usePoint" 								column="USE_POINT" 									jdbcType="INTEGER" />
+		<result property="point" 										column="POINT" 												jdbcType="INTEGER" />
+		<result property="currentPoint" 						column="CURRENT_POINT" 							jdbcType="INTEGER" />
+		<result property="user.userId" 							column="USER_ID" 											jdbcType="VARCHAR"  />
+		<result property="fund.fundMyPrice" 				column="FUND_MY_PRICE_NO" 				jdbcType="INTEGER"  />
+		<result property="ash.ashReservationNo" 	column="ASH_RESERVATION_NO" 			jdbcType="INTEGER"  />
+		<result property="purchase.purchaseNo" 		column="PURCHASE_NO" 							jdbcType="INTEGER"  />
+		
+	</resultMap>
+	
+
+	<select id="getTotalCount" parameterType="map" resultType="int" >
+		SELECT COUNT(*)
+	  	FROM(	SELECT * 
+						FROM point
+						where user_Id=#{userId}
+						<if test="search != null">
+								<if test="search.sorting == 1">and use_point=0</if>
+								<if test="search.sorting == 2">and point=0</if>
+						</if>
+						ORDER BY reg_date desc) countTable					
+	</select>
+	
+	<select id="currentPoint" parameterType="point"	resultType="int">
+		SELECT p.current_point
+		FROM  point p,(select MAX(point_no) mp 
+								from  point 
+								where user_id = #{user.userId}) pn 
+		WHERE point_no=pn.mp  
+		GROUP by CURRENT_POINT
+	</select>
+	
+	<select id="myPointList" parameterType="map"	resultMap="pointSelectMap">
+		select REG_DATE,CURRENT_POINT,FUND_MY_PRICE_NO,ASH_RESERVATION_NO,PURCHASE_NO,USE_POINT,POINT
+		from  (SELECT if.REG_DATE,if.CURRENT_POINT,if.FUND_MY_PRICE_NO,if.ASH_RESERVATION_NO,if.PURCHASE_NO,if.USE_POINT,POINT,ROWNUM AS row_seq 
+					FROM( SELECT REG_DATE,CURRENT_POINT,FUND_MY_PRICE_NO,ASH_RESERVATION_NO,PURCHASE_NO,USE_POINT,POINT
+									FROM point 
+									where 
+									USER_ID=#{userId}
+									<if test="search != null">
+										<if test="search.sorting == 1">and use_point=0</if>
+										<if test="search.sorting == 2">and point=0</if>
+									</if>
+									ORDER BY reg_date desc) if
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+		 where row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	 </select>
+	
+	
+	<!-- SQL : INSERT -->
+	<insert id="addPointUse"	parameterType="point" >
+	 	INSERT
+		 INTO point VALUES (seq_point_no.nextval,#{user.userId},
+		 <if test="fund != null">#{fund.fundMyPriceNo},0,0</if>
+		 <if test="purchase != null">0,#{purchase.purchaseNo},0</if>
+		 <if test="ash != null">0,0,#{ash.ashReservationNo}</if>
+		 ,SYSDATE,#{usePoint},0,#{currentPoint})
+	 </insert>
+	 
+	 
+	 <insert id="addPointSave"	parameterType="point" >
+	 	INSERT
+		 INTO point VALUES (seq_point_no.nextval,#{user.userId},
+		 <if test="fund!=null">#{fund.fundMyPriceNo},0,0</if>
+		 <if test="purchase != null">0,#{purchase.purchaseNo},0</if>
+		 <if test="ash != null">0,0,#{ash.ashReservationNo}</if>
+		 ,SYSDATE,0,#{point},#{currentPoint})
+		 										
+	 </insert>
+	
+	
+	
+	
+	<!-- <insert id="addPointUse"	parameterType="point" >
+	 	INSERT
+		 INTO point VALUES (seq_point_no.nextval,#{user.userId},
+		 <if test="fund.fundTitle != null">seq_fund_fund_no.nextval</if>
+		 <if test="ash.ashReservationName != null">seq_ash_ash_no.nextval</if>
+		 <if test="purchase.product.prodName != null">seq_purchase_purchase_no.nextval</if> 
+		 ,0,0,SYSDATE,#{usePoint},0,#{currentPoint})
+		 
+												
+	 </insert>
+	 
+	 <insert id="addPointSave"	parameterType="point" >
+	 	INSERT
+		 INTO point VALUES (seq_point_no.nextval,#{user.userId},
+		 <if test="fund.fundTitle!=null">seq_fund_fund_no.nextval</if>
+		 <if test="ash.ashReservationName!=null">seq_ash_ash_no.nextval</if>
+		 <if test="purchase.product.prodName !=null">seq_purchase_purchase_no.nextval</if>
+		 ,0,0,SYSDATE,0,#{point},#{currentPoint})
+		 										
+	 </insert> -->
+	 
+	
+	<delete id="deletePushToken" parameterType="string">
+		DELETE FROM push_token WHERE device_id = #{deviceId}
+	</delete>
+	 
+	<insert id="addPushToken" parameterType="pushToken">
+	 	INSERT
+		 INTO push_token VALUES (#{deviceId}, #{token}, #{user.userId})
+	</insert>
+	
+	<select id="getPushToken" parameterType="string"	resultType="string">
+		SELECT token
+		  FROM push_token
+		 WHERE user_id = #{userId}
+	</select>
+	 
+	
+
+	 
+</mapper>

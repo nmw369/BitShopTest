@@ -1,0 +1,23 @@
+CREATE TABLE users ( 
+	user_id 		VARCHAR2(30)	NOT NULL,
+	password 		VARCHAR2(20),
+	user_name 		VARCHAR2(50),	
+	birth			VARCHAR2(10),	
+	phone 			VARCHAR2(20),
+	email			VARCHAR2(100),
+	post_No 		VARCHAR2(20),
+	address1 		VARCHAR2(100),
+	address2 		VARCHAR2(100),
+	dog_no			NUMBER(10)	NOT NULL REFERENCES dog_breed_dic(dog_no),
+	user_condition	VARCHAR2(3),
+	join_date 		DATE,	
+	recently_date	DATE,
+	leave_date		DATE,
+	leave_reason  	VARCHAR(3),
+	role			VARCHAR2(20)	 DEFAULT 'user',
+	sns_naver_id	VARCHAR2(30),
+	sns_kakao_id	VARCHAR2(30),
+	sns_google_id	VARCHAR2(30),
+	sns_facebook_id VARCHAR2(30),
+	PRIMARY KEY(user_id)
+);

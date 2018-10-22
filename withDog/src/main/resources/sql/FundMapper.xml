@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="FundMapper">
+ 	
+ 	
+	<resultMap id="fundSelectMap" type="fund">
+		<result property="fundNo"  column="fund_no" 				jdbcType="INTEGER"/>
+	 	<result property="fundTitle" column="fund_title"	 		jdbcType="VARCHAR" />
+		<result property="fundImage" 	column="fund_image" 		jdbcType="VARCHAR" />
+		<result property="fundCenter" 		column="FUND_CENTER" 					jdbcType="VARCHAR" />
+		<result property="fundPhone" 				column="FUND_PHONE" 					jdbcType="VARCHAR" />
+		<result property="fundTerm" 			column="FUND_TERM" 		jdbcType="VARCHAR" />
+		<result property="fundRaising" 				column="FUND_RAISING" 					jdbcType="INTEGER" />
+		<result property="fundPersonnel" 			column="FUND_PERSONNEL" 				jdbcType="INTEGER"  />
+		<result property="fundState" 		column="FUND_STATE" 			jdbcType="VARCHAR" />
+		<result property="fundResultPrice" 		column="FUND_RESULT_PRICE" 			jdbcType="INTEGER" />
+		<result property="fundContent" 		column="fund_content2" 			jdbcType="CLOB" />
+		<result property="fundMyPrice"    column="FUND_MY_PRICE" jdbcType="INTEGER"/>
+		<result property="fundMyDate"    column="PURCHASE_DATE" jdbcType="DATE"/>
+		<result property="fundMyPriceNo" 		column="FUND_MY_PRICE_NO" 				jdbcType="INTEGER"  />
+		<result property="deleteFlag" 		column="DELETE_FLAG" 				jdbcType="VARCHAR"  />
+		<!-- <result property="fundPay" 		column="" 			jdbcType="VARCHAR" /> -->
+		<result property="user.userId" 		column="USER_ID" 				jdbcType="VARCHAR"  />
+		
+		<result property="point.usePoint" 		column="use_point" 				jdbcType="INTEGER"  />
+		<result property="point.point" 		column="point" 				jdbcType="INTEGER"  />
+	</resultMap>
+	
+
+	
+	
+	
+	<!-- SQL : INSERT -->
+	<insert id="addFund"	parameterType="fund" >
+	 	INSERT
+		 INTO fund VALUES ( seq_fund_fund_no.nextval,'${fundTitle}','${fundImage}' ,'${fundCenter}' ,'${fundPhone}' ,'${fundTerm}' , 0,0,'0',0,'aaaa',SYSDATE,0,'${fundContent}' )
+												
+	 </insert>
+	 
+	 <!-- SQL : SELECT ONE -->
+	 
+	 
+	<select id="getFund"	parameterType="int"	resultMap="fundSelectMap">
+		select fund_no,fund_Title,fund_image,fund_center,fund_term,fund_content2,fund_Raising,fund_personnel,FUND_PHONE,delete_flag,FUND_STATE
+		from  fund
+		where fund_no=#{value}
+		
+	 </select>
+	 
+	 <select id="getMyFundNo" parameterType="map"	resultMap="fundSelectMap">
+		select FUND_MY_PRICE_NO ,purchase_date , fund_my_price
+	 	 from(select rownum ,FUND_MY_PRICE_NO ,purchase_date , fund_my_price 
+		 from (select FUND_MY_PRICE_NO ,purchase_date , fund_my_price
+				 from  fund_info
+				 where fund_no=#{fund.fundNo} and user_id=#{user.userId}
+				 order by purchase_date desc))
+		 where rownum=1
+		 
+	 </select>
+	 
+	 
+	 <select id="getFundList" parameterType="user"	resultMap="fundSelectMap">
+		select fund_no,fund_Title,fund_image,fund_term,fund_Raising,delete_flag 
+		from  fund
+		where 
+		<if test="role == 'user'">delete_flag='0'and</if>
+		FUND_STATE='0'
+	 </select>
+	 
+	 <select id="getMinFund"	resultMap="fundSelectMap">
+		select fund_no,fund_Title,fund_image,fund_center,fund_term,fund_Raising,fund_personnel,FUND_PHONE,FUND_STATE,delete_flag   
+		from  
+        (select  ROWNUM  ,fund_no,fund_Title,fund_image,fund_center,fund_term,fund_Raising,fund_personnel,FUND_PHONE,FUND_STATE,delete_flag 
+        from   
+        (select fund_no,fund_Title,fund_image,fund_center,fund_term,fund_Raising,fund_personnel,FUND_PHONE,FUND_STATE,delete_flag 
+        from   fund where fund_state='0'  order  by  fund_raising)
+        )
+        where ROWNUM=1
+	</select>
+	 
+	 <insert id="addFundRaising"	parameterType="fund" >
+	 	INSERT
+		 INTO fund_info VALUES ( seq_fund_info_fund_my_price_no.nextval,#{fundNo},#{user.userId} ,'0' ,#{fundMyPrice} ,SYSDATE)
+												
+	 </insert>
+	 
+	 
+	 
+	 <update id="updateRaising" parameterType="fund">
+		UPDATE fund SET FUND_RAISING = FUND_RAISING + #{fundRaising}
+		WHERE
+		fund_title = #{fundTitle}	
+	  </update>
+	
+	  <update id="updateFund" parameterType="fund">
+		UPDATE fund SET 
+		fund_title = #{fundTitle},
+		fund_image = #{fundImage},
+		FUND_CENTER = #{fundCenter},
+		FUND_PHONE = #{fundPhone},
+		FUND_TERM = #{fundTerm},
+		fund_content2 = #{fundContent}
+		where fund_no = #{fundNo}
+	  </update>
+	  
+	
+	 
+	 
+	 
+	 <select id="getFundResultList" parameterType="map"	resultMap="fundSelectMap">
+		select fund_no,fund_Title,fund_image,fund_term,fund_Raising  ,delete_flag
+		from  (SELECT if.fund_no,if.fund_Title,if.fund_image,if.fund_term,if.fund_Raising ,if.delete_flag, ROWNUM AS row_seq 
+					FROM( SELECT fund_no,fund_Title,fund_image,fund_term,fund_Raising ,delete_flag
+									FROM fund 
+									where 
+									<if test="user.role == 'user'">delete_flag='0'and</if>
+									<if test="search.searchCondition != null">
+													<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										 				fund_Title Like '%'||#{search.searchKeyword}||'%' and
+													</if>
+													<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+										 				fund_no Like '%'||#{search.searchKeyword}||'%' and
+													</if>
+								    </if>
+									FUND_STATE='1'
+									ORDER BY reg_date desc) if
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+		 where row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	 </select>
+	 
+	 <!-- <select id="getMyFundList" parameterType="map"	resultMap="fundSelectMap">
+		select purchase_date,fund_Title,fund_term,fund_My_Price,fund_state,use_point,point,fund_my_price_no
+		from  (SELECT if.purchase_date,if.fund_Title,if.fund_term,if.fund_My_Price,if.fund_state,if.use_point,if.point,if.fund_my_price_no , ROWNUM AS row_seq
+					FROM( SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.use_point,p.point,fi.fund_my_price_no
+									FROM fund_info fi,fund f,point p
+									where 
+									fi.user_Id=#{user.userId} and fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no
+									ORDER BY fi.purchase_date desc) if
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+		 where row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	 </select> -->
+	 
+	 <select id="getMyFundList" parameterType="map"	resultMap="fundSelectMap">
+		select purchase_date,fund_Title,fund_term,fund_My_Price,fund_state,use_point,point,fund_my_price_no 
+		from  (SELECT if.purchase_date,if.fund_Title,if.fund_term,if.fund_My_Price,if.fund_state,if.use_point,if.point,if.fund_my_price_no , ROWNUM AS row_seq 
+					FROM(select sp.purchase_date,sp.fund_Title,sp.fund_term,sp.fund_My_Price,sp.fund_state,NVL(up.use_point,0) as use_point,sp.point,sp.sfin as fund_my_price_no  
+					 from 
+					 (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.use_point,fi.fund_my_price_no as ufin 					
+									FROM fund_info fi,fund f,point p 
+									where  
+									fi.user_Id=#{user.userId} and fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and point=0
+									<if test="search.searchCondition != null">
+													<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										 				and fund_Title Like '%'||#{search.searchKeyword}||'%' 
+													</if>
+													
+								    </if> 
+									ORDER BY fi.purchase_date desc) up, 
+
+			  (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.point,fi.fund_my_price_no as sfin 
+								    FROM fund_info fi,fund f,point p 
+								    where  
+									fi.user_Id=#{user.userId} and fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and use_point=0
+									<if test="search.searchCondition != null">
+													<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										 				and fund_Title Like '%'||#{search.searchKeyword}||'%'
+													</if>
+													
+								    </if> 
+    								ORDER BY fi.purchase_date desc) sp  
+	    where up.ufin(+) = sp.sfin order by sp.purchase_date desc) if  
+   	    WHERE ROWNUM &lt;= #{search.endRowNum} )  
+	    where row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	 </select>
+	 
+	 
+	 <select id="getFundUserList" parameterType="map"	resultMap="fundSelectMap">
+		select purchase_date,fund_Title,fund_term,fund_My_Price,fund_state,use_point,point,fund_my_price_no ,user_id
+		from  (SELECT if.purchase_date,if.fund_Title,if.fund_term,if.fund_My_Price,if.fund_state,if.use_point,if.point,if.fund_my_price_no , ROWNUM AS row_seq ,if.user_id
+					FROM(select sp.purchase_date,sp.fund_Title,sp.fund_term,sp.fund_My_Price,sp.fund_state,NVL(up.use_point,0) as use_point,sp.point,sp.sfin as fund_my_price_no,sp.user_id  
+					 from 
+					 (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.use_point,fi.fund_my_price_no as ufin,fi.user_Id 					
+									FROM fund_info fi,fund f,point p 
+									where
+									fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and point=0
+									 <if test="search.searchCondition != null">
+										<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+							 			 and    fi.user_id Like '%'||#{search.searchKeyword}||'%'
+										</if>
+										<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+							 			 and 	f.fund_title LIKE '%'||#{search.searchKeyword}||'%'
+										</if>
+							        </if>  
+									ORDER BY fi.purchase_date desc) up, 
+
+			  (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.point,fi.fund_my_price_no as sfin,fi.user_Id  
+								    FROM fund_info fi,fund f,point p 
+								    where
+								    fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and use_point=0
+								     <if test="search.searchCondition != null">
+										<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+							 			 and    fi.user_id Like '%'||#{search.searchKeyword}||'%'
+										</if>
+										<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+							 			 and 	f.fund_title LIKE '%'||#{search.searchKeyword}||'%'
+										</if>
+							        </if>  
+    								ORDER BY fi.purchase_date desc) sp  
+	    where up.ufin(+) = sp.sfin order by sp.purchase_date desc) if  
+   	    WHERE ROWNUM &lt;= #{search.endRowNum} )  
+	    where row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	    
+	 </select>
+	 
+	 
+	 <select id="getMyTotalCount" parameterType="map" resultType="int" >
+		SELECT COUNT(*)
+	  	FROM(select sp.purchase_date,sp.fund_Title,sp.fund_term,sp.fund_My_Price,sp.fund_state,NVL(up.use_point,0) as use_point,sp.point,sp.sfin as fund_my_price_no  
+					 from 
+					 (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.use_point,fi.fund_my_price_no as ufin 					
+									FROM fund_info fi,fund f,point p 
+									where  
+									fi.user_Id=#{user.userId} and fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and point=0
+									<if test="search.searchCondition != null">
+													<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										 				and f.fund_Title Like '%'||#{search.searchKeyword}||'%' 
+													</if>
+													
+								    </if> 
+									ORDER BY fi.purchase_date desc) up, 
+
+			  (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.point,fi.fund_my_price_no as sfin 
+								    FROM fund_info fi,fund f,point p 
+								    where  
+									fi.user_Id=#{user.userId} and fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and use_point=0
+									<if test="search.searchCondition != null">
+													<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										 				and f.fund_Title Like '%'||#{search.searchKeyword}||'%' 
+													</if>
+													
+								    </if> 
+    								ORDER BY fi.purchase_date desc) sp  
+	    where up.ufin(+) = sp.sfin order by sp.purchase_date desc) countTable					
+	</select>
+	 
+	 
+	 <select id="getResultTotalCount"  parameterType="map" resultType="int" >
+	    SELECT COUNT(*)
+	  	FROM(	SELECT * 
+						FROM fund
+						where
+						<if test="user.role == 'user'">delete_flag='0'and</if>
+									<if test="search.searchCondition != null">
+													<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+										 				fund_Title Like '%'||#{search.searchKeyword}||'%' and
+													</if>
+													
+								    </if>
+						FUND_STATE='1'
+						ORDER BY reg_date desc) countTable					
+	</select>
+
+	
+	<select id="getFundUserTotalCount" parameterType="map"  resultType="int" >
+		SELECT COUNT(*)
+	  	FROM(	select sp.purchase_date,sp.fund_Title,sp.fund_term,sp.fund_My_Price,sp.fund_state,NVL(up.use_point,0) as use_point,sp.point,sp.sfin as fund_my_price_no  
+					 from 
+					 (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.use_point,fi.fund_my_price_no as ufin 					
+									FROM fund_info fi,fund f,point p 
+									where  
+									fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and point=0
+									<if test="search.searchCondition != null">
+										<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+							 			 and    fi.user_id Like '%'||#{search.searchKeyword}||'%'
+										</if>
+										<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+							 			 and 	f.fund_title LIKE '%'||#{search.searchKeyword}||'%'
+										</if>
+							        </if>  
+									ORDER BY fi.purchase_date desc) up, 
+
+			  (SELECT fi.purchase_date,f.fund_Title,f.fund_term,fi.fund_My_Price,fund_state,p.point,fi.fund_my_price_no as sfin 
+								    FROM fund_info fi,fund f,point p 
+								    where  
+								fi.fund_no=f.fund_no and fi.fund_my_price_No(+)=p.fund_my_price_no and use_point=0
+								   <if test="search.searchCondition != null">
+										<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+							 			 and    fi.user_id Like '%'||#{search.searchKeyword}||'%'
+										</if>
+										<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+							 			 and 	f.fund_title LIKE '%'||#{search.searchKeyword}||'%'
+										</if>
+							        </if> 
+    								ORDER BY fi.purchase_date desc) sp  
+	    where up.ufin(+) = sp.sfin order by sp.purchase_date desc) countTable					
+	</select>
+	
+	
+	
+	<update id="deleteFund" parameterType="fund">
+		UPDATE fund SET delete_flag = '1'
+		WHERE
+		fund_No = #{fundNo}	
+	  </update>
+	
+	<select id="getFundPersonnel" parameterType="fund" resultType="int">
+		SELECT COUNT(*)
+		from(select DISTINCT user_id from fund_info where fund_no=#{fundNo})
+	</select>
+	 
+	 
+	 <update id="updateFundState" parameterType="int">
+		UPDATE fund SET FUND_STATE = '1'
+		WHERE
+		fund_No = #{value}	
+	</update>
+	
+	<select id="getFundSearch" parameterType="search" resultMap="fundSelectMap">
+	  	select 
+	 	<if test="searchCondition != null">
+				<if test="searchCondition == 0">
+	 				fund_title
+				</if>
+				<if test="searchCondition == 1">
+	 				fund_no
+				</if>
+				<if test="searchCondition == 2">
+	 				FUND_CENTER
+				</if>
+		</if>
+	 	from 
+	 	fund 
+	 	<if test="searchCondition != null">
+				<if test="searchCondition == 0 and searchKeyword !='' ">
+	 				where fund_title  Like '%'||#{searchKeyword}||'%'
+				</if>
+				<if test="searchCondition == 1 and searchKeyword !='' ">
+	 				where fund_no LIKE '%'||#{searchKeyword}||'%'
+				</if>
+			
+		</if>
+		and FUND_STATE='1'
+	 </select>
+	
+	 
+</mapper>

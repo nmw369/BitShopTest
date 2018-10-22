@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AfterAshMapper">
+
+	<resultMap id="AfterAshSelectMap" type="afterAsh">
+		
+		<result property="afterASHNo" column="after_ash_no" jdbcType="NUMERIC" />
+		<result property="afterASHTitle" column="after_ash_title" jdbcType="VARCHAR" />
+		<result property="afterASHContent" column="after_ash_content" jdbcType="VARCHAR" />
+		<result property="afterASHImage" column="after_ash_image" jdbcType="VARCHAR" />
+		<result property="afterASHVideo" column="after_ash_vedio" jdbcType="VARCHAR" />
+		<result property="viewCount" column="after_ash_view_count" jdbcType="VARCHAR" />
+		<result property="afterASHDate" column="after_ash_date" jdbcType="VARCHAR" />
+		<result property="afterASHTime" column="after_ash_time" jdbcType="VARCHAR" />
+		<result property="regDate" column="reg_date" jdbcType="DATE" />
+		<result property="deleteFlag" column="delete_flag" jdbcType="VARCHAR" />
+		<association property="healingDog" javaType="healingDog"> 
+	 		<result property="healingDogNo" column="healing_Dog_no" jdbcType="NUMERIC"/>
+	 		<result property="healingDogName" 	column="healing_dog_name" 		jdbcType="VARCHAR" />
+	 		<result property="healingDogHealer" 		column="healing_dog_healer" 				jdbcType="VARCHAR"  />
+		</association>   
+		<association property="user" javaType="user"> 
+	 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+		</association>
+	</resultMap>
+	
+	<insert id="addAfterAsh" parameterType="afterAsh">
+		INSERT INTO
+		after_ash
+		(after_ash_no, after_ash_title, after_ash_content, after_ash_image, after_ash_vedio, after_ash_date, after_ash_time, reg_date, delete_flag, healing_dog_no, user_id, after_ash_view_count)
+		VALUES (
+		seq_after_ash_after_ash_no.nextval,
+		#{afterASHTitle:VARCHAR},
+		#{afterASHContent:VARCHAR},
+		#{afterASHImage:VARCHAR},
+		#{afterASHVideo:VARCHAR},
+		#{afterASHDate:VARCHAR},
+		#{afterASHTime:VARCHAR},
+		SYSDATE,
+		'0',
+		#{healingDog.healingDogNo},
+		#{user.userId},
+		'0')
+	</insert>
+	
+	<select id="getAfterAsh" parameterType="int" resultMap="AfterAshSelectMap">
+		SELECT *
+		FROM after_ash
+		WHERE after_ash_no = #{value}
+	</select>
+	
+	<select id="getAfterAshList" parameterType="java.util.Map" resultMap="AfterAshSelectMap">
+		SELECT *
+		FROM(SELECT inner_table.* , ROWNUM AS row_seq 
+					FROM( SELECT * 
+									FROM after_ash
+												<where>
+													<if test="user.role=='user' ">
+														delete_flag = '0'
+													</if>
+													<if test="search.searchKeyword != null and search.searchKeyword !=0">
+														<if test="search.searchKeyword !='' ">
+											 				AND healing_Dog_no LIKE '%'||#{search.searchKeyword}||'%'
+														</if>
+													</if>
+												</where>
+									) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+					WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<select id="getAfterAshListByViewCount" resultMap="AfterAshSelectMap">
+		SELECT * 
+		FROM after_ash
+		ORDER BY TO_NUMBER(after_ash_view_count) DESC
+	</select>
+	
+	<select id="getTotalCount" parameterType="search" resultType="int" >
+		SELECT COUNT(*)
+	  	FROM(	SELECT * 
+						FROM after_ash
+							<where>
+								<if test="user.role=='user' ">
+									delete_flag = '0'
+								</if>
+								<if test="search.searchKeyword != null and search.searchKeyword !=0">
+									<if test="search.searchKeyword !='' ">
+					 					AND healing_Dog_no LIKE '%'||#{search.searchKeyword}||'%'
+									</if>
+								</if>
+						</where>
+						) countTable					
+	</select>	  
+	 
+	<update id="updateViewCount" parameterType="afterAsh">
+		UPDATE after_ash
+			<set>
+			after_ash_view_count = #{viewCount}
+			</set>
+			<where> 
+			after_ash_no = #{afterASHNo}
+			</where>
+	</update>
+	
+	<update id="deleteAfterASH" parameterType="afterAsh">
+		UPDATE after_ash
+		<set>
+		delete_flag = #{deleteFlag}
+		</set>
+		<where>
+		after_ash_no = #{afterASHNo}
+		</where>
+	</update>
+		
+	<update id="updateAfterAsh" parameterType="afterAsh">
+		UPDATE after_ash
+			<set>
+			after_ash_title = #{afterASHTitle},
+			after_ash_content = #{afterASHContent},
+			after_ash_date = #{afterASHDate},
+			after_ash_time = #{afterASHTime},
+			healing_dog_no = #{healingDog.healingDogNo},
+			after_ash_image=#{afterASHImage},
+<!-- 			after_ash_vedio = #{afterASHVideo} -->
+			</set>
+			<where> 
+			after_ash_no = #{afterASHNo}
+			</where>
+	</update>
+		
+		
+		
+</mapper>
+	
+	

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="DogInfoMapper">
+
+	<resultMap id="dogInfoSelectMap" type="dogInfo">
+		<result property="dogInfoNo" column="dog_info_no" jdbcType="NUMERIC" />
+		<result property="dogInfoTitle" column="dog_info_title" jdbcType="VARCHAR" />
+<!-- 		<result property="dogInfoContent" column="dog_info_content" jdbcType="VARCHAR" /> -->
+		<result property="dogInfoContent" column="dog_info_content" jdbcType="CLOB" />
+		<result property="dogInfoTopic" column="dog_info_topic" jdbcType="VARCHAR" />
+		<result property="viewCount" column="dog_info_view_count" jdbcType="VARCHAR" />
+		<result property="recommended" column="dog_info_recommend" jdbcType="VARCHAR" />
+		<result property="notRecommended" column="dog_info_not_recommend" jdbcType="VARCHAR" />
+		<result property="regDate" column="reg_date" jdbcType="VARCHAR" />
+		<result property="deleteFlag" column="delete_flag" jdbcType="VARCHAR" />
+		<result property="dogInfoImage" column="dog_info_image" jdbcType="VARCHAR" />
+		<association property="user" javaType="user"> 
+	 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+		</association>   
+		<association property="recommendCondition" javaType="recommendInfo"> 
+	 		<result property="recommendCondition" column="recommend_condition" jdbcType="VARCHAR"/>
+		</association>   
+	</resultMap>
+	
+	<resultMap id="recommendInfoSelectMap" type="dogInfo">
+		<result property="recommendCondition" column="recommend_condition" jdbcType="VARCHAR" />
+		<association property="dogInfo" javaType="dogInfo"> 
+	 		<result property="dogInfoNo" column="dog_info_no" jdbcType="NUMERIC"/>
+		</association>   
+		<association property="user" javaType="user"> 
+	 		<result property="userId" column="user_id" jdbcType="VARCHAR"/>
+		</association>   
+	</resultMap>
+	
+
+	
+
+
+	<!-- SQL : SELECT ONE -->
+	<insert id="addDogInfo" parameterType="dogInfo" >
+		INSERT INTO 
+		dog_info (dog_info_no,dog_info_title,dog_info_content,dog_info_topic,reg_date,delete_flag,dog_info_image,user_id,dog_info_recommend,dog_info_not_recommend,dog_info_view_count)
+		VALUES (
+		seq_dog_info_dog_info_no.nextval,
+		#{dogInfoTitle:VARCHAR},
+		#{dogInfoContent},
+		#{dogInfoTopic:VARCHAR},
+		SYSDATE,
+		'0',
+		#{dogInfoImage:VARCHAR},
+		#{user.userId},
+		'0',
+		'0',
+		'0')
+	</insert>
+	
+	<select id="getDogInfoByRecommend" parameterType="java.util.Map" resultMap="dogInfoSelectMap">
+		SELECT di.* , NVL(ri.recommend_condition,'3')  as recommend_condition
+		FROM dog_info di, recommend_info ri
+		where di.dog_info_no = ri.dog_info_no AND ri.user_id = #{user.userId}  AND di.dog_info_no= #{dogInfoNo}
+	</select>
+	
+	<select id="getDogInfo" parameterType="int" resultMap="dogInfoSelectMap">
+		SELECT *
+		FROM dog_info
+		WHERE dog_info_no = #{value}
+	</select>
+	
+	<update id="deleteDogInfo" parameterType="dogInfo">
+		UPDATE dog_info
+		<set>
+		delete_flag = #{deleteFlag}
+		</set>
+		<where>
+		dog_info_no = #{dogInfoNo}
+		</where>
+	</update>
+	
+	<select id="getDogInfoList" parameterType="java.util.Map" resultMap="dogInfoSelectMap">
+		SELECT *
+		FROM(SELECT inner_table.* , ROWNUM AS row_seq 
+					FROM( SELECT dog_info_no, user_id, dog_info_image, dog_info_content, dog_info_title, dog_info_topic, dog_info_view_count, dog_info_recommend, dog_info_not_recommend, TO_CHAR(reg_date, 'YYYY.MM.DD') reg_date, delete_flag
+									FROM dog_info
+									<where>
+										<if test="user.role=='user' ">
+											delete_flag = '0'
+										</if>
+										<if test="search.searchCondition != null and  search.searchCondition !='' and search.searchCondition !=8">
+											AND dog_info_topic = #{search.searchCondition}
+										</if>	
+										<if test= "search.searchKeyword !=null and search.searchKeyword !='' ">
+											AND user_id LIKE  '%'||#{search.searchKeyword}||'%' OR dog_info_title LIKE  '%'||#{search.searchKeyword}||'%'
+										</if>
+									</where>
+										<if test="search.sorting != 10 and search.sorting != 11">
+										 	ORDER BY dog_info_no DESC
+										</if>
+										<if test="search.sorting == 10">
+											ORDER BY TO_NUMBER(dog_info_view_count) DESC
+										</if>
+										<if test="search.sorting == 11">
+											ORDER BY TO_NUMBER(dog_info_recommend) DESC
+										</if>
+									
+									) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+					WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<select id="getTotalCount" parameterType="java.util.Map" resultType="int" >
+		SELECT COUNT(*)
+	  	FROM(	SELECT * 
+						FROM dog_info
+						<where>
+							<if test="user.role=='user' ">
+								delete_flag = '0'
+							</if>
+							<if test="search.searchCondition != null and  search.searchCondition !='' and search.searchCondition !=8">
+								AND dog_info_topic = #{search.searchCondition}
+							</if>	
+							<if test= "search.searchKeyword !=null and search.searchKeyword !='' ">
+								AND user_id LIKE  '%'||#{search.searchKeyword}||'%' OR dog_info_title LIKE  '%'||#{search.searchKeyword}||'%'
+							</if>
+						</where>
+						) countTable					
+	</select>
+	
+	<update id="updateDogInfo" parameterType="doginfo">
+		UPDATE dog_info
+			<set>
+			dog_info_title = #{dogInfoTitle},
+			dog_info_content = #{dogInfoContent},
+			dog_info_topic = #{dogInfoTopic},
+			dog_info_image=#{dogInfoImage}
+			</set>
+			<where> 
+			dog_info_no = #{dogInfoNo}
+			</where>
+	</update>
+	
+	<update id="updateViewCount" parameterType="doginfo">
+		UPDATE dog_info
+			<set>
+			dog_info_view_count = #{viewCount}
+			</set>
+			<where> 
+			dog_info_no = #{dogInfoNo}
+			</where>
+	</update>
+	
+	<update id="updateRecommend" parameterType="doginfo">
+		UPDATE dog_info
+			<set>
+			dog_info_recommend = #{recommended},
+			dog_info_not_recommend = #{notRecommended}
+			</set>
+			<where> 
+			dog_info_no = #{dogInfoNo}
+			</where>
+	</update>
+	
+	<insert id="addRecommendInfo" parameterType="recommendInfo">
+		INSERT 
+		INTO recommend_info
+		VALUES (#{user.userId},#{dogInfo.dogInfoNo},#{recommendCondition})
+	</insert>
+	
+	<select id="getRecommendInfo" parameterType="dogInfo" resultType="int">
+		SELECT recommend_condition
+		FROM recommend_info
+		where dog_info_no = #{dogInfoNo} AND user_id = #{user.userId}
+	</select>
+	
+	<update id="updateRecommendInfo" parameterType="dogInfo">
+		UPDATE recommend_info
+			<set>
+			recommend_condition = #{recommendCondition},
+			</set>
+			<where> 
+			dog_info_no = #{dogInfoNo}
+			</where>
+	</update>
+	
+	<delete id="deleteRecommendInfo" parameterType="java.util.Map">
+		DELETE FROM recommend_info
+		WHERE user_id = #{user.userId}  AND dog_info_no= #{dogInfoNo}
+	</delete>
+	
+	<select id="countDogInfoTopic" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(dog_info_topic)
+		FROM dog_info
+		<if test="user.role=='user' ">
+			<if test="dogInfoTopic != 8">
+				<where>
+					dog_info_topic = #{dogInfoTopic} AND delete_flag = '0'
+				</where>
+			</if>
+			<if test="dogInfoTopic == 8">
+				<where>
+					delete_flag = '0'
+				</where>
+			</if>
+		</if>
+		<if test="user.role=='admin' ">
+			<if test="dogInfoTopic != 8">
+				<where>
+					dog_info_topic = #{dogInfoTopic}
+				</where>
+			</if>
+		</if>
+	</select>
+
+
+
+</mapper>

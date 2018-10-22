@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="InquiryMapper">
+ 	
+ 	
+	<resultMap id="inquirySelectMap" type="inquiry">
+		<result property="inquiryNo" 						column="inquiry_no" 						jdbcType="INTEGER"/>
+		<result property="product.prodNo"				column="prod_no" 								jdbcType="INTEGER" />
+		<result property="product.prodName"		column="prodName" 							jdbcType="VARCHAR" />
+		<result property="user.userId"						column="user_id" 								jdbcType="VARCHAR" />
+		<result property="inquiryTitle"	 					column="inquiry_title" 						jdbcType="VARCHAR" />
+		<result property="inquiryContent" 				column="inquiry_content"		 		jdbcType="VARCHAR" />
+		<result property="regDate" 							column="reg_date" 							jdbcType="DATE" />
+		<result property="secret" 								column="secret" 									jdbcType="VARCHAR" />
+		<result property="replyCondition"			 	column="reply_condition" 				jdbcType="VARCHAR" />
+		<result property="inquiryReply"	 				column="inquiry_reply" 					jdbcType="VARCHAR" />
+		<result property="deleteFlag" 						column="delete_flag"							jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- SQL : INSERT -->
+	<insert 	id="addInquiry"		parameterType="inquiry" >
+		INSERT
+		  INTO inquiry(inquiry_no, prod_no, user_id, inquiry_title, inquiry_content, reg_date, secret)
+		VALUES (seq_inquiry_inquiry_no.NEXTVAL, #{product.prodNo}, #{user.userId}, #{inquiryTitle}, #{inquiryContent}, SYSDATE, #{secret})
+	 </insert>
+	 
+ 	 <!-- SQL : UPDATE -->
+	 <update	id="deleteInquiry"	parameterType="int" >
+	   	UPDATE inquiry
+	   	<set>
+	   		delete_flag = '1'
+	   	</set>
+	   	WHERE inquiry_no = #{inquiryNo}
+	 </update>
+	 
+	 <!-- SQL : UPDATE INQUIRY -->
+	 <update	id="updateInquiry"	parameterType="inquiry" >
+	   	UPDATE inquiry
+	   	<set>
+	  	 	inquiry_content = #{inquiryContent}
+	   	</set>
+	   	WHERE inquiry_no = #{inquiryNo}
+	 </update>
+	 
+	 <!-- SQL : UPDATE REPLY -->
+	 <update	id="updateInquiryReplyAdmin"	parameterType="inquiry" >
+	   	UPDATE inquiry
+	   	<set>
+	  	 	inquiry_reply = #{inquiryReply},
+	  	 	reply_condition = '1'
+	   	</set>
+	   	WHERE inquiry_no = #{inquiryNo}
+	 </update>
+	 
+ 	 <!-- SQL : SELECT ONE -->
+	 <select 	id="getInquiry"	parameterType="int"	resultMap="inquirySelectMap">
+		SELECT inquiry_no, prod_no, user_id, inquiry_title, inquiry_content, reg_date, secret, reply_condition, inquiry_reply, delete_flag
+		  FROM inquiry
+		 WHERE inquiry_no = #{inquiryNo}
+	 </select>
+	 
+	 
+	<sql id="select-inquiry-list">
+		SELECT inquiry_no, prod_no, user_id, inquiry_title, inquiry_content, reg_date, secret, reply_condition, inquiry_reply, delete_flag
+		  FROM inquiry
+		 WHERE prod_no = #{prodNo}
+		 AND delete_flag = '0'
+		 ORDER BY inquiry_no DESC
+	</sql>
+	
+	
+ 	<!-- SQL : SELECT LIST 어드민상품문의관리 -->
+	<select  id="getInquiryListAdmin"  parameterType="map"	  resultMap="inquirySelectMap">
+		<include refid="select-rownum-start"/>
+		SELECT
+			i.inquiry_no, i.prod_no, p.prod_name prodName, i.user_id, i.inquiry_title, i.inquiry_content,
+			i.reg_date, i.secret, i.reply_condition, i.inquiry_reply, i.delete_flag
+		FROM inquiry i, product p
+		WHERE i.prod_no = p.prod_no
+		ORDER BY inquiry_no DESC
+		<include refid="select-rownum-end"/>
+	 </select>
+	 
+	 
+	  	<!-- SQL : SELECT LIST 유저상품문의관리 -->
+		<select  id="getMyInquiryList"  parameterType="map" resultMap="inquirySelectMap">
+		<include refid="select-rownum-start"/>
+		SELECT
+			i.inquiry_no, i.prod_no, p.prod_name prodName, i.user_id, i.inquiry_title, i.inquiry_content,
+			i.reg_date, i.secret, i.reply_condition, i.inquiry_reply, i.delete_flag
+		FROM inquiry i, product p
+		WHERE
+		i.prod_no = p.prod_no
+		AND i.user_id = #{userId}
+		AND i.delete_flag = '0'
+		ORDER BY inquiry_no DESC
+		<include refid="select-rownum-end"/>
+	 </select>
+	 
+	 
+ 	<!-- SQL : SELECT ROW Count 어드민상품문의관리 토탈카운트-->
+	<select id="getInquiryListAdminCount" parameterType="int" resultType="int">
+		<include refid="select-count-start"/>
+		SELECT
+			inquiry_no, prod_no, user_id, inquiry_title, inquiry_content,
+			reg_date, secret, reply_condition, inquiry_reply, delete_flag
+		FROM inquiry
+		ORDER BY inquiry_no DESC
+		<include refid="select-count-end"/>
+	</select>	 
+	
+	
+	
+ 	<!-- SQL : SELECT ROW Count 유저상품문의관리 토탈카운트-->
+	<select id="getMyInquiryListCount" parameterType="int" resultType="int">
+		<include refid="select-count-start"/>
+		SELECT
+			inquiry_no, prod_no, user_id, inquiry_title, inquiry_content,
+			reg_date, secret, reply_condition, inquiry_reply, delete_flag
+		FROM inquiry
+		WHERE user_id = #{userId}
+		AND delete_flag = '0'
+		ORDER BY inquiry_no DESC
+		<include refid="select-count-end"/>
+	</select>	 
+	
+		 
+ 	<!-- SQL : SELECT LIST -->
+	<select  id="getInquiryList"  parameterType="map"	resultMap="inquirySelectMap">
+		<include refid="select-rownum-start"/>
+		<include refid="select-inquiry-list"/>
+		<include refid="select-rownum-end"/>
+	 </select>
+	 
+	
+ 	<!-- SQL : SELECT ROW Count -->
+	<select id="getInquiryListCount" parameterType="int" resultType="int">
+		<include refid="select-count-start"/>
+		<include refid="select-inquiry-list"/>
+		<include refid="select-count-end"/>
+	</select>	 
+	
+	
+
+	 
+	
+	
+	<sql id="select-rownum-start">
+		SELECT * FROM (	SELECT inner_table. * ,  ROWNUM AS row_seq FROM (
+	</sql>
+	
+	<sql id="select-rownum-end">
+		) inner_table WHERE ROWNUM &lt;= #{search.endRowNum} ) WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</sql>
+	
+	<sql id="select-count-start">
+		SELECT COUNT(*) FROM (
+	</sql>
+	
+	<sql id="select-count-end">
+		)
+	</sql>
+	 
+</mapper>
