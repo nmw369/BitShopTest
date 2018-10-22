@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PurchaseMapper">
+ 	
+ 	
+	<resultMap id="purchaseSelectMap" type="purchase">
+		<result property="user.userId"								column="user_id"									jdbcType="VARCHAR" />
+		<result property="user.userName"						column="user_name"								jdbcType="VARCHAR" />
+		<result property="product.prodNo"						column="prod_no"									jdbcType="INTEGER" />
+		<result property="product.prodName"				column="prodName" 								jdbcType="VARCHAR" />
+		<result property="product.prodImage"				column="prodImage" 							jdbcType="VARCHAR" />
+		<result property="product.price"							column="price" 										jdbcType="VARCHAR" />
+		<result property="purchaseNo"								column="purchase_no"							jdbcType="INTEGER" />
+		<result property="usePoint"									column="use_point"									jdbcType="INTEGER" />
+		<result property="cartNo"										column="cart_no"									jdbcType="INTEGER" />
+		<result property="receiverName" 							column="receiver_name" 						jdbcType="VARCHAR" />
+		<result property="receiverPhone" 						column="receiver_phone"			 		jdbcType="VARCHAR" />
+		<result property="receiverAddr1" 						column="receiver_addr1" 					jdbcType="VARCHAR" />
+		<result property="receiverAddr2" 						column="receiver_addr2" 					jdbcType="VARCHAR" />
+		<result property="divyRequest" 							column="divy_request" 						jdbcType="VARCHAR" />
+		<result property="purchaseQuantity"					column="purchase_quantity"				jdbcType="INTEGER" />
+		<result property="purchasePrice"							column="purchase_price"						jdbcType="INTEGER" />
+		<result property="purchaseDate" 						column="purchase_date"			 			jdbcType="DATE" />
+		<result property="purchaseCondition" 				column="purchase_condition"			jdbcType="VARCHAR" />
+		<result property="cancelDate" 								column="cancel_date" 							jdbcType="DATE"/>
+		<result property="divyDate"									column="divy_date" 								jdbcType="DATE" />
+		<result property="paymentOption" 					column="payment_option" 				jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="addPurchaseSeq" resultType="int">
+		SELECT seq_purchase_purchase_no.NEXTVAL from dual
+	</select>
+	
+	<select id="addCartSeq" resultType="int">
+		SELECT seq_cart_cart_no.NEXTVAL from dual
+	</select>
+	
+	<!-- SQL : INSERT  -->
+	<insert 	id="addPurchase" parameterType="purchase" >
+	INSERT
+		INTO purchase (user_id, prod_no, cart_no, purchase_no, receiver_name, receiver_phone, receiver_addr1, receiver_addr2, divy_request, purchase_quantity, purchase_price, purchase_date, purchase_condition, payment_option) 
+		VALUES (#{user.userId}, #{product.prodNo},  #{cartNo}, #{purchaseNo}, #{receiverName}, #{receiverPhone}, #{receiverAddr1}, #{receiverAddr2}, #{divyRequest}, #{purchaseQuantity}, #{purchasePrice}, SYSDATE, '1',  '0')
+	 </insert>
+	 
+	 
+ 	 <!--SQL : SELECT ONE -->
+	 <select 	id="getPurchase"	parameterType="int"	resultMap="purchaseSelectMap">
+		SELECT
+		u.user_name user_name, NVL(po.use_point, 0) use_point, p.prod_name prodName, p.prod_image prodImage, pc.prod_no, pc.purchase_no,  pc.cart_no, pc.user_id, pc.purchase_price, pc.purchase_condition, TO_CHAR(pc.purchase_date, 'YYYY-MM-DD HH:MI:SS') purchase_date, pc.purchase_quantity, pc.receiver_name, pc.receiver_addr1, pc.receiver_addr2, pc.receiver_phone, pc.cancel_date, pc.divy_date
+		FROM purchase pc, product p, (SELECT use_point, purchase_no FROM point WHERE point=0) po, users u
+		WHERE
+		pc.prod_no = p.prod_no
+		AND pc.purchase_no = po.purchase_no(+)
+		AND pc.purchase_no = #{purchaseNo}	
+		AND pc.user_id = u.user_id
+	 </select>
+	 
+	 <!--SQL : SELECT ONE -->
+	 <select 	id="getPurchaseCondition"	parameterType="int"	resultMap="purchaseSelectMap">
+		SELECT
+		p.prod_name prodName, pc.cart_no
+		FROM purchase pc, product p
+		WHERE
+		pc.prod_no = p.prod_no
+		AND pc.purchase_no = #{purchaseNo}	
+		AND pc.purchase_condition = '3'
+	 </select>
+	 
+	 <select id="getProdNo" parameterType="int"	resultMap="purchaseSelectMap">
+	 	SELECT * FROM purchase
+	 	WHERE cart_no = #{value}
+	 </select>
+	 
+ 	<!-- SQL : UPDATE -->
+	 <update	id="updatePurchase"	parameterType="purchase" >
+	   	UPDATE purchase
+	   	<set>
+	   		receiver_name = #{receiverName},
+	   		receiver_phone = #{receiverPhone},
+	   		receiver_addr1 = #{receiverAddr1},
+	   		receiver_addr2 = #{receiverAddr2}
+	   	</set>
+	   	WHERE purchase_no = #{purchaseNo}
+	 </update>
+	 
+	
+ 	<!--SQL : UPDATEPURCHASECONDITION -->
+	 <update	id="updatePurchaseCondition"	parameterType="purchase" >
+	   	UPDATE purchase
+		<set>
+			purchase_condition = #{purchaseCondition}
+			<if test="purchaseCondition == 0">
+			,cancel_date = SYSDATE
+			</if>
+			<if test="purchaseCondition == 3">
+	   		,divy_date = SYSDATE
+			</if>
+		</set>
+	   	WHERE purchase_no = #{purchaseNo}
+	 </update>
+	 
+	 
+	 <!--SQL : UPDATEPURCHASECONDITION -->
+	 <update	id="updateCartNoPurchaseCondition"	parameterType="int" >
+	   	UPDATE purchase
+		<set>
+			purchase_condition = '4'
+		</set>
+	   	WHERE cart_no = #{cartNo}
+	 </update>
+	 
+	 
+	
+ 	<!--SQL : SELECT LIST -->
+	<select  id="getPurchaseList"  parameterType="map"	resultMap="purchaseSelectMap">
+		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+	  				 FROM ( SELECT p.prod_no, p.prod_name prodName, p.prod_image prodImage, p.price price, pc.purchase_no,  pc.user_id, pc.purchase_price, pc.purchase_condition, TO_CHAR(pc.purchase_date, 'YYYY-MM-DD HH:MI:SS') purchase_date, pc.cancel_date, pc.divy_date, pc.purchase_quantity FROM purchase pc, product p
+	  				 <where>
+	  				 pc.prod_no = p.prod_no
+	  				 <if test="user.userId != null">
+		  				 AND pc.user_id = #{user.userId}
+	  				 </if>
+	  				 </where>
+					ORDER BY purchase_no DESC
+	  				  ) inner_table
+	  				 WHERE ROWNUM &lt;= #{search.endRowNum} )
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}	
+	 </select>
+
+	
+ 	<!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCount"  parameterType="map"	resultType="int">
+	 	SELECT COUNT(*)
+	 	FROM ( SELECT * FROM Purchase
+	 				 <where>
+	 				 	<if test="user.userId != null">
+		  					user_id = #{user.userId}
+	 				 	</if>
+	  				 </where> ) countTable				
+	 </select>
+	 
+</mapper>

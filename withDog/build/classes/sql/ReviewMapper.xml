@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ReviewMapper">
+
+	<resultMap id="reviewSelectMap" type="review">
+		<result property="purchase.cartNo" column="cart_no" jdbcType="INTEGER" />
+		<result property="user.userId" column="user_id" jdbcType="VARCHAR" />
+		<result property="product.prodNo" column="prod_no" jdbcType="INTEGER" />
+		<result property="reviewTitle" column="review_title" jdbcType="VARCHAR" />
+		<result property="reviewContent" column="review_content" jdbcType="VARCHAR" />
+		<result property="regDate" column="reg_date" jdbcType="DATE" />
+		<result property="reviewScore" column="review_score" jdbcType="INTEGER" />
+		<result property="deleteFlag" column="delete_flag" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<!-- SQL : INSERT -->
+	<insert id="addReview" parameterType="review">
+		INSERT
+		INTO review (cart_no, user_id, prod_no, review_title, review_content, reg_date, review_score)
+		VALUES (
+		#{purchase.cartNo}, #{user.userId}, #{product.prodNo}, #{reviewTitle}, #{reviewContent}, SYSDATE, #{reviewScore})
+	</insert>
+	
+	
+ 	<!-- SQL : SELECT LIST  -->
+	<select  id="getReviewList"  parameterType="map" resultMap="reviewSelectMap">
+	SELECT * FROM ( SELECT inner_table. * ,  ROWNUM AS row_seq FROM (
+		SELECT
+			review_title, review_content, user_id, review_score, TO_CHAR(reg_date, 'YYYY.MM.DD') reg_date
+		FROM review
+		WHERE
+		prod_no = #{prodNo}
+		ORDER BY reg_date DESC
+		) inner_table WHERE ROWNUM &lt;= #{search.endRowNum} )
+	WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	
+ 	<!-- SQL : SELECT ROW Count -->
+	<select id="getReviewListCount" parameterType="int" resultType="int">
+		SELECT COUNT(*) FROM (
+			SELECT
+				review_title, review_content, user_id, review_score, reg_date
+			FROM review
+			WHERE
+			prod_no = #{value}
+			ORDER BY reg_date DESC
+		)
+	</select>	 
+
+
+
+
+</mapper>

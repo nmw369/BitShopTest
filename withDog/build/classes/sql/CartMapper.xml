@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CartMapper">
+
+	<resultMap id="cartSelectMap" type="cart">
+		<result property="cartNo"							 column="cart_no" 						jdbcType="INTEGER"/>
+		<result property="cartQuantity"				 column="cart_quantity"			 jdbcType="INTEGER"/>
+		
+		<association property="product"  javaType="product">
+			<id property="prodNo"								column="prod_no"						 jdbcType="INTEGER"/>
+			<result property="prodType"					column="prod_type" 					jdbcType="VARCHAR" />
+			<result property="prodName"				column="prod_name" 				jdbcType="VARCHAR" />
+			<result property="prodContent" 			column="prod_content" 			jdbcType="VARCHAR" />
+			<result property="prodImage" 				column="prod_image" 				jdbcType="VARCHAR" />
+			<result property="price" 							column="price" 							jdbcType="INTEGER" />
+			<result property="prodQuantity" 			column="prod_quantity" 			jdbcType="INTEGER" />
+			<result property="regDate" 					column="reg_date" 					jdbcType="DATE" />
+		</association>
+		
+		<association property="user"  javaType="user">
+			<id property="userId"								column="user_id" 						jdbcType="VARCHAR"/>
+			<result property="password" 					column="password" 					jdbcType="VARCHAR" />
+			<result property="userName"					column="user_name" 				jdbcType="VARCHAR" />
+			<result property="birth"							column="birth" 							jdbcType="VARCHAR" />
+			<result property="phone"		 				column="phone" 							jdbcType="VARCHAR" />
+			<result property="postNo"		 				column="post_no" 						jdbcType="VARCHAR" />
+			<result property="address1"		 			column="address1" 					jdbcType="VARCHAR" />
+			<result property="address2"		 			column="address2" 					jdbcType="VARCHAR" />
+			<result property="userCondition"			column="user_condition" 		jdbcType="VARCHAR" />
+			<result property="recentlyDate"			column="recently_date" 			jdbcType="DATE" />
+			<result property="joinDate"					column="join_date" 					jdbcType="DATE" />
+			<result property="role"								column="role" 								jdbcType="VARCHAR" />
+		</association>
+		
+	</resultMap>
+	
+	
+	<!-- 장바구니담기 -->
+	<insert id="addCart" parameterType="cart">
+		INSERT INTO cart(cart_no, user_id, prod_no, cart_quantity)
+		VALUES (seq_cart_cart_no.NEXTVAL, 
+				#{user.userId:VARCHAR}, 
+				#{product.prodNo:INTEGER}, 
+				#{cartQuantity:INTEGER})
+	</insert>
+	
+	
+	<!-- 수량변경 -->
+	<update id="updateCart" parameterType="cart">
+		UPDATE cart
+		<set>
+		cart_quantity = #{cartQuantity}
+		</set> 
+		WHERE cart_no = #{cartNo}
+	</update>
+	
+	<!-- 장바구니 개별삭제 -->
+	<delete id="deleteCart" parameterType="cart">
+		DELETE FROM cart WHERE cart_no = #{cartNo}
+	</delete>
+	
+	<!-- 장바구니 비우기 -->
+	<delete id="deleteAllCart" parameterType="cart">
+		DELETE FROM cart WHERE user_id = #{userId}
+	</delete>
+	
+	<!-- 장바구니 중복체크 -->
+	<select id="getCart" parameterType="map" resultMap="cartSelectMap">
+		SELECT cart_no, user_id, prod_no, cart_quantity
+		FROM cart 
+		WHERE user_id = #{userId}
+		AND prod_no = #{prodNo}
+	</select>
+	
+
+	<select id="getCartList" parameterType="map" resultMap="cartSelectMap">
+		SELECT 
+			c.cart_no,c.user_id, c.cart_quantity, c.prod_no, 
+			p.prod_name, p.price, p.prod_image, p.prod_quantity
+		FROM cart c, product p
+		WHERE c.prod_no = p.prod_no
+		AND c.user_id = #{userId}
+		ORDER BY c.cart_no
+	</select>
+	
+	<select id="getCartListTotalCount" parameterType="map" resultType="int">
+		SELECT COUNT(*) FROM (
+		SELECT 
+			c.cart_no,c.user_id, c.cart_quantity, c.prod_no, 
+			p.prod_name, p.price, p.prod_image, p.prod_quantity
+		FROM cart c, product p
+		WHERE c.prod_no = p.prod_no
+		AND c.user_id = #{userId}
+		ORDER BY c.cart_no
+		)
+	</select>
+	
+	
+	<select id="getSelectCartList" parameterType="string" resultMap="cartSelectMap">
+		SELECT 
+			c.cart_no,c.user_id, c.cart_quantity, c.prod_no, 
+			p.prod_name, p.price, p.prod_image, p.prod_quantity
+		FROM cart c, product p
+		WHERE c.prod_no = p.prod_no
+		AND c.cart_no IN 
+        <foreach item="cartList" index="index" collection="array" open="(" separator="," close=")">
+        #{cartList}
+        </foreach>
+	</select>
+	
+	<select id="getSelectCartListTotalCount" parameterType="string" resultType="int">
+		SELECT COUNT(*) FROM (
+		SELECT 
+			c.cart_no,c.user_id, c.cart_quantity, c.prod_no, 
+			p.prod_name, p.price, p.prod_image, p.prod_quantity
+		FROM cart c, product p
+		WHERE c.prod_no = p.prod_no
+		AND c.cart_no IN 
+        <foreach item="cartList" index="index" collection="array" open="(" separator="," close=")">
+        #{cartList}
+        </foreach>
+		)
+	</select>
+</mapper>

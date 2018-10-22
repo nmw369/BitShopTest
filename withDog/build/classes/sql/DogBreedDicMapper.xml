@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="DogBreedDicMapper">
+
+	<resultMap id="dogBreedDicSelectMap" type="dogBreedDic">
+		<result property="dogNo" column="dog_no" jdbcType="NUMERIC" />
+		<result property="dogBreedEN" column="dog_breed_en" jdbcType="VARCHAR" />
+		<result property="dogBreedKO" column="dog_breed_ko" jdbcType="VARCHAR" />
+		<result property="dogHeight" column="dog_height" jdbcType="VARCHAR" />
+		<result property="dogWeight" column="dog_weight" jdbcType="VARCHAR" />
+		<result property="dogLifeSpan" column="dog_lifespan" jdbcType="VARCHAR" />
+		<result property="dogPlace" column="dog_place" jdbcType="VARCHAR" />
+		<result property="dogColor" column="dog_color" jdbcType="VARCHAR" />
+		<result property="dogPersonality" column="dog_personality" jdbcType="VARCHAR" />
+		<result property="dogLink" column="dog_link" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<!-- SQL : SELECT ONE -->
+	<select id="getDogBreed" parameterType="string" resultMap="dogBreedDicSelectMap">
+		SELECT
+		*
+		FROM dog_breed_dic	
+		WHERE dog_breed_en = #{value}
+	</select>
+	
+	<!-- SQL : SELECT ONE -->
+	<select id="getDogBreed2" parameterType="int" resultMap="dogBreedDicSelectMap">
+		SELECT
+		dog_breed_ko
+		FROM dog_breed_dic	
+		WHERE dog_no = #{value}
+	</select>
+
+	<select id="getDogBreedInfoList" parameterType="string" resultMap="dogBreedDicSelectMap">
+		SELECT *
+		FROM dog_breed_dic
+		WHERE dog_breed_ko = #{value}
+	</select>
+	
+	<select id="getAllDogBreedInfoList" resultMap="dogBreedDicSelectMap">
+		SELECT *
+		FROM dog_breed_dic
+		ORDER BY dog_no
+	</select>
+	
+	<select id="getAllDogBreedInfoListByKo" resultMap="dogBreedDicSelectMap">
+		SELECT *
+		FROM dog_breed_dic
+		ORDER BY dog_breed_Ko
+	</select>
+	
+	<select id="getAllDogBreedNameListByKo" resultMap="dogBreedDicSelectMap">
+		SELECT dog_breed_ko
+		FROM dog_breed_dic
+		ORDER BY dog_breed_Ko
+	</select>
+
+
+</mapper>

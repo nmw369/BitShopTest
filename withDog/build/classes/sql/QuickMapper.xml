@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="QuickMapper">
+
+	<resultMap id="chatBotSelectMap" type="chatBot">
+		<result property="questionNo" column="question_no" jdbcType="NUMERIC" />
+		<result property="question" column="question" jdbcType="VARCHAR" />
+		<result property="answer" column="answer" jdbcType="VARCHAR" />
+		<result property="questionCount" column="question_count" jdbcType="NUMERIC" />
+		<result property="deleteFlag" column="delete_flag" jdbcType="VARCHAR" />
+		<result property="connectAble" column="connect_able" jdbcType="VARCHAR" />
+	</resultMap>
+	
+
+	<!-- SQL : SELECT ONE -->
+	<insert id="addChatBot" parameterType="chatBot" >
+		INSERT INTO 
+		chat_bot (question_no,question,answer,question_count,delete_flag)
+		VALUES (
+		seq_chat_bot_question_no.nextval,
+		#{question},
+		#{answer},
+		0,
+		'0'
+		)
+	</insert>
+	
+	<select id="getChatBot" parameterType="int" resultMap="chatBotSelectMap">
+		SELECT *
+		FROM chat_bot
+		WHERE question_no = #{value}
+	</select>
+	
+	<select id="getChatBotList"  parameterType="user" resultMap="chatBotSelectMap">
+		SELECT *
+		FROM chat_bot
+		<if test="role=='user' ">
+			WHERE delete_flag = '0'
+		</if>
+		ORDER BY question_no
+	</select>
+	
+	<update id="updateChatBot" parameterType="chatBot">
+		UPDATE chat_bot
+		<set>
+		question = #{question},
+		answer = #{answer},
+		delete_flag = #{deleteFlag}
+		</set>
+		<where>
+		question_no = #{questionNo}
+		</where>
+	</update>
+	
+	<update id="updateConnect" parameterType="chatBot">
+		UPDATE chat_bot
+		<set>
+		answer = #{answer},
+		connect_able = #{connectAble},
+		delete_flag = #{deleteFlag}
+		</set>
+		<where>
+		question_no = #{questionNo}
+		</where>
+	</update>
+	
+	<update id="updateQuestionCount" parameterType="chatBot">
+		UPDATE chat_bot
+		<set>
+		question_count = #{questionCount}
+		</set>
+		<where>
+		question_no = #{questionNo}
+		</where>
+	</update>
+	
+	<delete id="deleteChatBot" parameterType="int">
+		DELETE 
+		FROM chat_bot
+		WHERE question_no = #{value}
+	</delete>
+
+	<select id="getCurrentChatBot" resultMap="chatBotSelectMap">
+		SELECT cb.*
+		FROM chat_bot cb, (SELECT MAX(question_no) question_no from chat_bot) ar
+		WHERE cb.question_no = ar.question_no
+	</select>
+
+
+
+</mapper>

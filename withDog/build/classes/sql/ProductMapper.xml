@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ProductMapper">
+ 	
+ 	
+	<resultMap id="productSelectMap" type="product">
+		<result property="prodNo" 					column="prod_no" 						jdbcType="INTEGER"/>
+		<result property="prodType"				column="prod_type" 					jdbcType="VARCHAR" />
+		<result property="prodName"			column="prod_name" 				jdbcType="VARCHAR" />
+		<result property="prodContent" 		column="prod_content" 			jdbcType="VARCHAR" />
+		<result property="prodImage" 			column="prod_image" 				jdbcType="VARCHAR" />
+		<result property="price" 						column="price" 							jdbcType="INTEGER" />
+		<result property="prodQuantity" 		column="prod_quantity" 			jdbcType="INTEGER" />
+		<result property="regDate" 				column="reg_date" 					jdbcType="DATE" />
+		<result property="deleteFlag" 			column="delete_flag"					jdbcType="VARCHAR" />
+		<result property="inquiryCnt" 			column="inquiry_cnt"				jdbcType="INTEGER" />
+		<result property="reviewCnt" 			column="review_cnt"					jdbcType="INTEGER" />
+		<result property="avgScore" 			column="avg_score"					jdbcType="INTEGER" />
+	</resultMap>
+	
+	<!-- SQL : INSERT -->
+	<insert 	id="addProductAdmin"		parameterType="product" >
+	 	INSERT
+		INTO product (prod_no, prod_type, prod_name, prod_content, prod_image, price, prod_quantity, reg_date) 
+		VALUES (seq_product_prod_no.NEXTVAL, ${prodType}, #{prodName}, #{prodContent}, #{prodImage}, #{price}, #{prodQuantity}, SYSDATE)
+	 </insert>
+	 
+ 	 <!-- SQL : SELECT ONE -->
+	 <select 	id="getProduct"	parameterType="int"	resultMap="productSelectMap">
+		SELECT
+		p.prod_no, p.prod_type, p.prod_name, p.prod_content, p.prod_image, p.price, p.prod_quantity, p.reg_date, p.delete_flag, i.inquiry_cnt, r.review_cnt, NVL(ROUND(r.score/r.review_cnt, 0), 0) avg_score 
+		FROM product p, (SELECT count(*) inquiry_cnt FROM inquiry WHERE prod_no = #{value} AND delete_flag = '0') i, (SELECT count(*) review_cnt, SUM(review_score) score FROM review WHERE prod_no = #{value}) r
+		WHERE p.prod_no = #{value}	
+	 </select>
+	 
+ 	 <!-- SQL : UPDATE -->
+	 <update	id="updateProductAdmin"	parameterType="product" >
+	   	UPDATE product
+	   	<set>
+	   		prod_type = #{prodType},
+	   		prod_name = #{prodName},
+	   		price = #{price},
+	   		prod_image = #{prodImage, jdbcType=VARCHAR},
+	   		prod_content = #{prodContent, jdbcType=VARCHAR},
+	   		prod_quantity = #{prodQuantity}
+	   	</set>
+	   	WHERE prod_no = #{prodNo}
+	 </update>
+	 
+	<!-- SQL : DELETE -->
+	 <update	id="updateDeleteFlag"	parameterType="product" >
+	   	UPDATE product
+	   	<set>
+	   		delete_flag = #{deleteFlag}
+	   	</set>
+	   	WHERE prod_no = #{prodNo}
+	 </update>
+	 
+		 
+ 	<!-- SQL : SELECT LIST -->
+	<select  id="getProductList"  parameterType="search"	resultMap="productSelectMap">
+		SELECT * 
+		FROM ( SELECT inner_table.* , ROWNUM AS row_seq
+	  				 FROM ( SELECT  p.prod_no, p.prod_type, p.prod_image, p.prod_name, p.price, NVL(i.review_cnt, 0) review_cnt, NVL(i.review_score, 0) review_score, NVL(ROUND(i.review_score/i.review_cnt, 0),0) avg_score 
+	  				 FROM product p, (SELECT p2.prod_no, COUNT(r.cart_no) review_cnt, SUM(r.review_score) review_score FROM product p2, review r WHERE p2.prod_no = r.prod_no(+) GROUP BY p2.prod_no) i
+	  				 <trim prefix="where" prefixOverrides="AND | OR">
+	  				 		p.prod_no = i.prod_no
+		  				 		<if test='role != "admin"'>
+			  				 		AND p.delete_flag = '0' 
+			  				 	 </if>
+			  				 	<if test='prodType=="0" '>
+			  				 		AND p.prod_type = '0'
+			  				 	</if>
+			  				 	<if test='prodType=="1" '>
+			  				 		AND p.prod_type = '1'
+			  				 	</if>
+				  				 <if test="searchKeyword != null">
+				  				 		AND p.prod_name LIKE '%'||#{searchKeyword}||'%'
+				  				 </if>
+			  		</trim>
+	  				 ORDER BY
+	  				 <if test="sorting == 0">
+	  				 	p.reg_date DESC
+	  				 </if>
+	  				 <if test="sorting == 1">
+	  				 	i.review_cnt DESC
+	  				 </if>
+	  				 <if test="sorting == 2">
+	  				 	p.price
+	  				 </if>
+	  				 <if test="sorting == 3">
+	  				 	p.price DESC
+	  				 </if> ) inner_table
+	  				 WHERE ROWNUM &lt;= #{endRowNum} )
+		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum}	
+	 </select>
+
+	
+ 	<!-- SQL : SELECT ROW Count -->
+	 <select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	 	SELECT COUNT(*)
+	 	FROM ( SELECT prod_no, prod_type, prod_image, prod_name, price, delete_flag
+	  				 FROM product
+	  				 <trim prefix="where"  prefixOverrides="AND | OR">
+	  					 <if test='role != "admin"'>
+				  				delete_flag = '0' 
+				  		</if>
+	  				 	<if test='prodType=="0" '>
+	  				 		AND prod_type = '0'
+	  				 	</if>
+	  				 	<if test='prodType=="1" '>
+	  				 		AND prod_type = '1'
+	  				 	</if>
+		  				 <if test="searchKeyword != null">
+		  				 		AND prod_name LIKE '%'||#{searchKeyword}||'%'
+		  				 </if>
+	  				 </trim> ) countTable				
+	 </select>
+	 
+	 
+	 
+	 
+</mapper>
